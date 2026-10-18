@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M+E Tarif-Kompass</title>
+<meta name="description" content="Arbeits- und Lernhilfe zu den Tarifverträgen der Metall- und Elektroindustrie Baden-Württemberg (Südwestmetall / IG Metall).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23134e6f'/%3E%3Ctext x='16' y='23' font-size='20' font-family='Georgia,serif' text-anchor='middle' fill='%23fff'%3E%C2%A7%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Zum Inhalt springen</a>
+
+<header class="topbar">
+  <button class="burger" id="burger" aria-label="Menü" aria-expanded="false">☰</button>
+  <div class="brand">
+    <span class="brand-mark">§</span>
+    <span class="brand-text">
+      <strong>M+E Tarif-Kompass</strong>
+      <small>Metall- und Elektroindustrie Baden-Württemberg</small>
+    </span>
+  </div>
+  <div class="searchbox">
+    <input id="globalSearch" type="search" placeholder="Wo steht …? z. B. Nachtzuschlag, Kündigungsfrist, § 40" autocomplete="off" aria-label="Volltextsuche">
+    <kbd>/</kbd>
+  </div>
+  <button class="theme-toggle" id="themeToggle" aria-label="Hell/Dunkel umschalten">◐</button>
+</header>
+
+<div class="shell">
+  <nav class="sidenav" id="sidenav" aria-label="Hauptnavigation">
+    <a href="#/start" data-nav="start"><span>🧭</span>Start</a>
+    <a href="#/themen" data-nav="themen"><span>📚</span>Themen</a>
+    <a href="#/register" data-nav="register"><span>🔎</span>Wo steht was</a>
+    <a href="#/karten" data-nav="karten"><span>🗂️</span>Karteikarten</a>
+    <a href="#/rechner" data-nav="rechner"><span>🧮</span>Rechner</a>
+    <a href="#/notizen" data-nav="notizen"><span>✏️</span>Ergänzungen</a>
+    <a href="#/quellen" data-nav="quellen"><span>📄</span>Quellen</a>
+    <div class="nav-foot">
+      <p class="muted">Stand der Daten:<br><strong id="navStand"></strong></p>
+    </div>
+  </nav>
+
+  <main id="main" tabindex="-1"></main>
+</div>
+
+<div class="searchoverlay" id="searchOverlay" hidden>
+  <div class="searchresults" id="searchResults"></div>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/register-mtv.js"></script>
+<script src="assets/register-era.js"></script>
+<script src="assets/register-weitere.js"></script>
+<script src="assets/cards.js"></script>
+<script src="assets/calc.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

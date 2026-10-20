@@ -1,0 +1,3 @@
+# Diese App ist fuer die Nutzung im Betrieb gedacht, nicht fuer Suchmaschinen.
+User-agent: *
+Disallow: /

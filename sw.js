@@ -3,7 +3,7 @@
    Danach laeuft sie ohne Server und ohne Internet.
    Bei jeder Aenderung an den Dateien die VERSION hochzaehlen. */
 
-var VERSION = "tk-v2";
+var VERSION = "tk-v3";
 var WARTEZEIT = 2500;   /* so lange wird auf das Netz gewartet, dann aus dem Cache */
 
 var DATEIEN = [

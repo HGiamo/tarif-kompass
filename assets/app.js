@@ -832,13 +832,21 @@ function viewInstallieren(){
          "<div class=\"btn-row\" style=\"margin:0\"><button class=\"btn\" id=\"copyUrl\">Adresse kopieren</button></div></div>";
   }
 
+  h += "<div id=\"offlineStatus\"></div>";
+
+  h += "<div class=\"note ok\"><strong>Danach ohne Internet:</strong> Beim ersten vollständigen Start legt die App alle Inhalte auf dem Gerät ab – " +
+       "Register, Rechner und Karteikarten. Von da an braucht sie <strong>weder Server noch Verbindung</strong>. " +
+       "Wichtig ist nur: Nach dem Hinzufügen die App <strong>einmal öffnen, solange noch Verbindung besteht</strong>, und kurz warten. " +
+       "Einzige Ausnahme sind die verlinkten Original-PDFs – die kommen bei Bedarf frisch aus dem Netz.</div>";
+
   h += "<div class=\"weg empfohlen\"><div class=\"weg-kopf\"><h2>Weg 1: Zum Home-Bildschirm</h2><span class=\"badge\">empfohlen</span></div>" +
        "<p class=\"muted\">Der von Apple vorgesehene Weg für Web-Apps. Dauert zehn Sekunden, braucht nichts weiter als Safari.</p>" +
        "<ol class=\"schritte\">" +
        "<li><b>Adresse in Safari öffnen</b><p>Die App muss in <strong>Safari</strong> geöffnet sein – nicht in Chrome und nicht aus einer anderen App heraus.</p></li>" +
        "<li><b>Teilen-Symbol antippen</b><p>Das Quadrat mit dem Pfeil nach oben, unten in der Mitte der Safari-Leiste.</p></li>" +
        "<li><b>„Zum Home-Bildschirm“ wählen</b><p>Im Teilen-Menü nach unten scrollen. Der Eintrag heißt auf manchen Geräten „Add to Home Screen“.</p></li>" +
-       "<li><b>Namen bestätigen und „Hinzufügen“</b><p>Es erscheint ein Symbol mit dem Paragraphzeichen. Von da an startet die App im Vollbild – mit eigenem Startbild und offline.</p></li>" +
+       "<li><b>Namen bestätigen und „Hinzufügen“</b><p>Es erscheint ein Symbol mit dem Paragraphzeichen. Von da an startet die App im Vollbild – mit eigenem Startbild.</p></li>" +
+       "<li><b>App einmal öffnen, solange Verbindung besteht</b><p>Erst dabei lädt sie alle Inhalte auf das Gerät. Oben auf dieser Seite steht dann „vollständig auf dem Gerät“ – ab da läuft sie ohne Netz.</p></li>" +
        "</ol></div>";
 
   h += "<div class=\"weg\"><div class=\"weg-kopf\"><h2>Weg 2: Als Datei herunterladen</h2><span class=\"badge grau\">Konfigurationsprofil</span></div>" +
@@ -875,7 +883,45 @@ function viewInstallieren(){
        "</ul></div>";
   return h + disclaimer();
 }
+function offlineStatus(){
+  var box = el("offlineStatus");
+  if(!box) return;
+  function melde(klasse, titel, text){
+    box.innerHTML = "<div class=\"note " + klasse + "\"><strong>" + titel + "</strong> " + text + "</div>";
+  }
+  if(location.protocol === "file:"){ box.innerHTML = ""; return; }
+  if(!("serviceWorker" in navigator)){
+    melde("warn", "Offline-Betrieb nicht möglich:", "Dieser Browser unterstützt keine Service Worker.");
+    return;
+  }
+  melde("", "Offline-Vorrat:", "wird geprüft …");
+  var fertig = false;
+  var horcher = function(ev){
+    if(!ev.data || ev.data.typ !== "status") return;
+    fertig = true;
+    navigator.serviceWorker.removeEventListener("message", horcher);
+    var d = ev.data;
+    if(d.abgelegt >= d.erwartet){
+      melde("ok", "Vollständig auf dem Gerät:", "Alle " + d.abgelegt + " Dateien sind gespeichert. " +
+        "Die App läuft ab jetzt ohne Server und ohne Internetverbindung.");
+    } else {
+      melde("", "Wird geladen:", d.abgelegt + " von " + d.erwartet + " Dateien liegen auf dem Gerät. " +
+        "Bitte die Seite bei bestehender Verbindung einmal neu laden.");
+    }
+  };
+  navigator.serviceWorker.addEventListener("message", horcher);
+  navigator.serviceWorker.ready.then(function(){
+    if(navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage("status");
+  }).catch(function(){});
+  setTimeout(function(){
+    if(fertig) return;
+    navigator.serviceWorker.removeEventListener("message", horcher);
+    melde("", "Noch nicht gesichert:", "Die App wurde auf diesem Gerät noch nicht vollständig abgelegt. " +
+      "Bitte die Seite bei bestehender Verbindung einmal neu laden.");
+  }, 2500);
+}
 function installBind(){
+  offlineStatus();
   var p = el("profilBtn");
   if(p) p.addEventListener("click", profilLaden);
   var c = el("copyUrl");

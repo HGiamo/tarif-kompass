@@ -341,12 +341,16 @@ details.acc .acc-body{padding:0 15px 13px}
 /* ---------- Installationshinweis ---------- */
 .installbar{
   position:fixed;left:0;right:0;bottom:0;z-index:29;
-  display:flex;align-items:center;flex-wrap:wrap;gap:10px;
-  padding:12px 16px;padding-bottom:calc(12px + var(--unten));
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  padding:10px 16px;padding-bottom:calc(10px + var(--unten));
+  padding-left:calc(16px + var(--links));padding-right:calc(16px + var(--rechts));
   background:var(--bg-elev);border-top:1px solid var(--line);
-  box-shadow:0 -4px 20px rgba(16,24,32,.12);font-size:14px
+  box-shadow:0 -4px 20px rgba(16,24,32,.12);font-size:13.5px
 }
-.installbar span{flex:1 1 220px;color:var(--ink-soft)}
+/* Muss nach .installbar stehen, sonst schlaegt display:flex das hidden-Attribut */
+.installbar[hidden]{display:none}
+.installbar span{flex:1 1 180px;color:var(--ink-soft)}
+body.mitLeiste main{padding-bottom:calc(150px + var(--unten))}
 .schritte{list-style:none;counter-reset:s;padding:0;margin:0}
 .schritte li{
   counter-increment:s;position:relative;

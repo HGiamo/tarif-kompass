@@ -941,15 +941,20 @@ function installBind(){
 function installBar(){
   var bar = el("installBar");
   if(!bar) return;
-  var zeigen = !istApp() && appAdresse() && !LS.get("tk.installWeg", false) &&
-               (istIOS() || !!installPrompt) && location.hash.indexOf("#/installieren") !== 0;
+  /* Nur auf der Startseite, nur einmal: der Hinweis soll nicht im Weg stehen.
+     Dauerhaft erreichbar bleibt er ohnehin ueber den Menuepunkt "Aufs iPhone". */
+  var aufStart = location.hash === "" || location.hash === "#/" || location.hash.indexOf("#/start") === 0;
+  var zeigen = aufStart && !istApp() && !!appAdresse() && !LS.get("tk.installWeg", false) &&
+               (istIOS() || !!installPrompt);
   bar.hidden = !zeigen;
+  document.body.classList.toggle("mitLeiste", zeigen);
 }
 (function(){
   var d = el("installDismiss");
   if(d) d.addEventListener("click", function(){
     LS.set("tk.installWeg", true);
     el("installBar").hidden = true;
+    document.body.classList.remove("mitLeiste");
   });
 })();
 

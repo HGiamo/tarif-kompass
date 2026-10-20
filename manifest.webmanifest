@@ -1,0 +1,27 @@
+{
+  "name": "M+E Tarif-Kompass",
+  "short_name": "Tarif-Kompass",
+  "description": "Tarifverträge der Metall- und Elektroindustrie Baden-Württemberg: nachschlagen, rechnen und lernen — mit Paragraph und Fundstelle.",
+  "lang": "de-DE",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "me-tarif-kompass",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "theme_color": "#134e6f",
+  "background_color": "#134e6f",
+  "categories": ["productivity", "business", "education", "reference"],
+  "icons": [
+    { "src": "assets/icons/icon-192.png",          "sizes": "192x192",   "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png",          "sizes": "512x512",   "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-1024.png",         "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512",   "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Wo steht was",   "short_name": "Register", "url": "./index.html#/register", "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Rechner",        "short_name": "Rechner",  "url": "./index.html#/rechner",  "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Karteikarten",   "short_name": "Karten",   "url": "./index.html#/karten",   "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

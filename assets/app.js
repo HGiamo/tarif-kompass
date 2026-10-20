@@ -92,6 +92,8 @@ function buildIndex(){
     var t = TK.themen[i];
     idx.push({ art:"Thema", titel:t.name, text:t.desc, href:"#/thema/" + t.id, key:norm([t.name, t.desc].join(" ")) });
   }
+  idx.push({ art:"Thema", titel:"Aufs iPhone holen", text:"Als App auf den Home-Bildschirm legen, Konfigurationsprofil, Offline-Betrieb",
+    href:"#/installieren", key:norm("installieren iphone ipad app home bildschirm homescreen offline profil mobileconfig safari apple vollbild symbol installation herunterladen download pwa") });
   var ids = Object.keys(notizen);
   for(i=0;i<ids.length;i++){
     if(!notizen[ids[i]]) continue;
@@ -255,6 +257,7 @@ function viewStart(){
   h += "<a class=\"tile\" href=\"#/karten\"><span class=\"tile-ico\">🗂️</span><h3>Karteikarten</h3><p>" + TK.karten.length + " Karten zum Lernen – Frage, Antwort, Paragraph. Mit Fortschritt und Wiederholung.</p></a>";
   h += "<a class=\"tile\" href=\"#/themen\"><span class=\"tile-ico\">📚</span><h3>Themen</h3><p>Alle Regelungen nach " + TK.themen.length + " Sachgebieten geordnet – vom Einstieg bis zur Beendigung.</p></a>";
   h += "<a class=\"tile\" href=\"#/notizen\"><span class=\"tile-ico\">✏️</span><h3>Ergänzungen</h3><p>Eigene Notizen zu jeder Fundstelle – Betriebsvereinbarungen, Hausregeln, Ansprechpartner.</p></a>";
+  h += "<a class=\"tile\" href=\"#/installieren\"><span class=\"tile-ico\">📲</span><h3>Aufs iPhone</h3><p>Als App auf den Home-Bildschirm legen – Vollbild, eigenes Symbol, offline nutzbar.</p></a>";
   h += "<a class=\"tile\" href=\"#/quellen\"><span class=\"tile-ico\">📄</span><h3>Quellen</h3><p>Direktlinks zu den öffentlichen Tarifvertragstexten als PDF.</p></a>";
   h += "</div>";
 
@@ -732,6 +735,178 @@ function notizenBind(){
   });
 }
 
+/* ---------- Installieren ---------- */
+var installPrompt = null;
+window.addEventListener("beforeinstallprompt", function(e){
+  e.preventDefault();
+  installPrompt = e;
+  if(location.hash.indexOf("#/installieren") === 0) route();
+});
+function istApp(){
+  return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+         window.navigator.standalone === true;
+}
+function istIOS(){
+  return /iP(hone|ad|od)/.test(navigator.userAgent) ||
+         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+function appAdresse(){
+  if(location.protocol === "file:") return null;
+  return location.origin + location.pathname.replace(/[^\/]*$/, "");
+}
+function uuid(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c){
+    var r = Math.random()*16|0;
+    return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
+  }).toUpperCase();
+}
+function profilXml(adresse, iconBase64){
+  var u1 = uuid(), u2 = uuid();
+  return '<?xml version="1.0" encoding="UTF-8"?>\n' +
+'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n' +
+'<plist version="1.0">\n<dict>\n' +
+'  <key>PayloadContent</key>\n  <array>\n    <dict>\n' +
+'      <key>FullScreen</key>\n      <true/>\n' +
+'      <key>Icon</key>\n      <data>' + iconBase64 + '</data>\n' +
+'      <key>IsRemovable</key>\n      <true/>\n' +
+'      <key>Label</key>\n      <string>Tarif-Kompass</string>\n' +
+'      <key>Precomposed</key>\n      <true/>\n' +
+'      <key>URL</key>\n      <string>' + adresse + '</string>\n' +
+'      <key>PayloadDescription</key>\n      <string>Legt den M+E Tarif-Kompass auf den Home-Bildschirm.</string>\n' +
+'      <key>PayloadDisplayName</key>\n      <string>M+E Tarif-Kompass</string>\n' +
+'      <key>PayloadIdentifier</key>\n      <string>de.tarifkompass.webclip.' + u1 + '</string>\n' +
+'      <key>PayloadType</key>\n      <string>com.apple.webClip.managed</string>\n' +
+'      <key>PayloadUUID</key>\n      <string>' + u1 + '</string>\n' +
+'      <key>PayloadVersion</key>\n      <integer>1</integer>\n' +
+'    </dict>\n  </array>\n' +
+'  <key>PayloadDescription</key>\n  <string>Richtet den M+E Tarif-Kompass als App-Symbol auf dem Home-Bildschirm ein. Das Profil enthält ausschließlich diese Verknüpfung und kann jederzeit entfernt werden.</string>\n' +
+'  <key>PayloadDisplayName</key>\n  <string>M+E Tarif-Kompass</string>\n' +
+'  <key>PayloadIdentifier</key>\n  <string>de.tarifkompass.profil.' + u2 + '</string>\n' +
+'  <key>PayloadOrganization</key>\n  <string>M+E Tarif-Kompass</string>\n' +
+'  <key>PayloadRemovalDisallowed</key>\n  <false/>\n' +
+'  <key>PayloadType</key>\n  <string>Configuration</string>\n' +
+'  <key>PayloadUUID</key>\n  <string>' + u2 + '</string>\n' +
+'  <key>PayloadVersion</key>\n  <integer>1</integer>\n' +
+'</dict>\n</plist>\n';
+}
+function profilLaden(){
+  var adresse = appAdresse();
+  if(!adresse){
+    alert("Das Profil braucht die Web-Adresse der App. Öffne die Seite über ihre Internetadresse – lokal von der Festplatte geht es nicht.");
+    return;
+  }
+  fetch("assets/icons/icon-180.png").then(function(r){ return r.blob(); }).then(function(b){
+    return new Promise(function(ok){
+      var fr = new FileReader();
+      fr.onload = function(){ ok(String(fr.result).split(",")[1]); };
+      fr.readAsDataURL(b);
+    });
+  }).catch(function(){ return ""; }).then(function(icon){
+    var xml = profilXml(adresse, icon);
+    var blob = new Blob([xml], {type:"application/x-apple-aspen-config"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "M+E-Tarif-Kompass.mobileconfig";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  });
+}
+function viewInstallieren(){
+  var adresse = appAdresse();
+  var h = "<h1>Aufs iPhone holen</h1>";
+  if(istApp()){
+    h += "<div class=\"note ok\"><strong>Fertig:</strong> Die App läuft bereits im App-Modus vom Home-Bildschirm. " +
+         "Sie funktioniert auch ohne Internet – nur die verlinkten Original-PDFs brauchen eine Verbindung.</div>";
+  }
+  h += "<p class=\"lead\">Der Tarif-Kompass lässt sich wie eine App auf den Home-Bildschirm legen: eigenes Symbol, Vollbild ohne Browserleiste, " +
+       "und nach dem ersten Start auch <strong>ohne Internet</strong> nutzbar. Beides geht ohne App Store und ohne Entwicklerkonto.</p>";
+  if(!adresse){
+    h += "<div class=\"note warn\"><strong>Hinweis:</strong> Diese Seite liegt gerade als Datei auf dem Rechner (<code>file://</code>). " +
+         "Für die Installation auf dem iPhone muss die App unter einer Internetadresse erreichbar sein – danach funktionieren beide Wege unten.</div>";
+  } else {
+    h += "<div class=\"card\"><p style=\"margin:0 0 6px\"><strong>Adresse dieser App</strong></p>" +
+         "<p class=\"formula\" style=\"margin:0 0 10px\">" + esc(adresse) + "</p>" +
+         "<div class=\"btn-row\" style=\"margin:0\"><button class=\"btn\" id=\"copyUrl\">Adresse kopieren</button></div></div>";
+  }
+
+  h += "<div class=\"weg empfohlen\"><div class=\"weg-kopf\"><h2>Weg 1: Zum Home-Bildschirm</h2><span class=\"badge\">empfohlen</span></div>" +
+       "<p class=\"muted\">Der von Apple vorgesehene Weg für Web-Apps. Dauert zehn Sekunden, braucht nichts weiter als Safari.</p>" +
+       "<ol class=\"schritte\">" +
+       "<li><b>Adresse in Safari öffnen</b><p>Die App muss in <strong>Safari</strong> geöffnet sein – nicht in Chrome und nicht aus einer anderen App heraus.</p></li>" +
+       "<li><b>Teilen-Symbol antippen</b><p>Das Quadrat mit dem Pfeil nach oben, unten in der Mitte der Safari-Leiste.</p></li>" +
+       "<li><b>„Zum Home-Bildschirm“ wählen</b><p>Im Teilen-Menü nach unten scrollen. Der Eintrag heißt auf manchen Geräten „Add to Home Screen“.</p></li>" +
+       "<li><b>Namen bestätigen und „Hinzufügen“</b><p>Es erscheint ein Symbol mit dem Paragraphzeichen. Von da an startet die App im Vollbild – mit eigenem Startbild und offline.</p></li>" +
+       "</ol></div>";
+
+  h += "<div class=\"weg\"><div class=\"weg-kopf\"><h2>Weg 2: Als Datei herunterladen</h2><span class=\"badge grau\">Konfigurationsprofil</span></div>" +
+       "<p class=\"muted\">Wenn du wirklich etwas <em>herunterladen</em> willst: Das ist Apples eigener Mechanismus für Konfigurationsprofile. " +
+       "Die Datei wird im Browser geladen und in den Einstellungen installiert – ohne Entwicklerkonto, ohne Marktplatz.</p>" +
+       "<div class=\"btn-row\"><button class=\"btn primary\" id=\"profilBtn\"" + (adresse ? "" : " disabled") + ">Profil herunterladen (.mobileconfig)</button></div>" +
+       "<ol class=\"schritte\">" +
+       "<li><b>Profil laden</b><p>Safari fragt, ob die Datei geladen werden darf. Sie landet in <strong>Dateien › Downloads</strong>.</p></li>" +
+       "<li><b>Datei öffnen</b><p>In der App „Dateien“ antippen. iOS meldet daraufhin oben in den Einstellungen „Profil geladen“.</p></li>" +
+       "<li><b>Einstellungen › Profil geladen › Installieren</b><p>Code eingeben und bestätigen. iOS zeigt dabei <strong>„Nicht verifiziert“</strong> an – das heißt nur, dass das Profil nicht kostenpflichtig signiert wurde.</p></li>" +
+       "<li><b>Symbol erscheint auf dem Home-Bildschirm</b><p>Entfernen geht jederzeit über <strong>Einstellungen › Allgemein › VPN und Geräteverwaltung</strong>.</p></li>" +
+       "</ol>" +
+       "<div class=\"note\"><strong>Was in der Datei steht:</strong> ausschließlich ein Web-Clip – Name, Symbol und die Adresse dieser App. " +
+       "Keine Rechte auf Daten, keine Ortung, keine Verwaltung des Geräts. Die Datei wird direkt hier im Browser erzeugt und nirgends hochgeladen.</div></div>";
+
+  if(installPrompt){
+    h += "<div class=\"weg\"><div class=\"weg-kopf\"><h2>Auf diesem Gerät installieren</h2></div>" +
+         "<p class=\"muted\">Dieser Browser kann die App direkt installieren.</p>" +
+         "<div class=\"btn-row\"><button class=\"btn primary\" id=\"installNow\">Jetzt installieren</button></div></div>";
+  }
+
+  h += "<h2>Und ein echtes App-Symbol aus dem App Store?</h2><div class=\"card\"><p>Der Vollständigkeit halber, damit die Einordnung stimmt:</p><ul>" +
+       "<li><strong>App Store</strong> und <strong>TestFlight</strong> setzen das kostenpflichtige Apple Developer Program voraus (99 USD im Jahr) und eine Prüfung durch Apple.</li>" +
+       "<li><strong>Web Distribution</strong> – Apple erlaubt in der EU seit iOS 17.5 die Verteilung von Apps über die eigene Website, ganz ohne alternativen Marktplatz. " +
+       "Dafür braucht es aber ebenfalls ein Entwicklerkonto, dazu zwei Jahre Mitgliedschaft und eine App mit mehr als einer Million Installationen in der EU im Vorjahr.</li>" +
+       "<li><strong>Sideloading</strong> mit AltStore oder Sideloadly läuft über eine kostenlose Apple-ID, erfordert aber einen Rechner und eine erneute Signatur alle sieben Tage.</li>" +
+       "</ul><p style=\"margin-bottom:0\">Für eine Nachschlage-App wie diese bringt der native Weg nichts, was die beiden Wege oben nicht auch können – Vollbild, eigenes Symbol, Offline-Betrieb.</p></div>";
+
+  h += "<h2>Gut zu wissen</h2><div class=\"card\"><ul>" +
+       "<li><strong>Offline:</strong> Nach dem ersten vollständigen Start liegen alle Inhalte auf dem Gerät – Register, Rechner und Karteikarten funktionieren ohne Netz. Nur die verlinkten Original-PDFs brauchen eine Verbindung.</li>" +
+       "<li><strong>Eigene Ergänzungen</strong> und der Lernfortschritt bleiben in der App gespeichert, aber nur auf diesem Gerät. Sicherung über <a href=\"#/notizen\">Ergänzungen › Als Datei sichern</a>.</li>" +
+       "<li><strong>Aktualisierung:</strong> Bei bestehender Verbindung holt sich die App neue Inhalte beim Start selbst. Nach größeren Änderungen hilft es, sie einmal zu schließen und neu zu öffnen.</li>" +
+       "<li><strong>Kein Konto, keine Übertragung:</strong> Es gibt keine Anmeldung und keinen Server, der mitschreibt.</li>" +
+       "</ul></div>";
+  return h + disclaimer();
+}
+function installBind(){
+  var p = el("profilBtn");
+  if(p) p.addEventListener("click", profilLaden);
+  var c = el("copyUrl");
+  if(c) c.addEventListener("click", function(){
+    var a = appAdresse();
+    if(!a) return;
+    if(navigator.clipboard) navigator.clipboard.writeText(a).then(function(){ c.textContent = "Adresse kopiert"; });
+    else c.textContent = a;
+  });
+  var i = el("installNow");
+  if(i) i.addEventListener("click", function(){
+    if(!installPrompt) return;
+    installPrompt.prompt();
+    installPrompt.userChoice.then(function(){ installPrompt = null; route(); });
+  });
+}
+function installBar(){
+  var bar = el("installBar");
+  if(!bar) return;
+  var zeigen = !istApp() && appAdresse() && !LS.get("tk.installWeg", false) &&
+               (istIOS() || !!installPrompt) && location.hash.indexOf("#/installieren") !== 0;
+  bar.hidden = !zeigen;
+}
+(function(){
+  var d = el("installDismiss");
+  if(d) d.addEventListener("click", function(){
+    LS.set("tk.installWeg", true);
+    el("installBar").hidden = true;
+  });
+})();
+
 /* ---------- Quellen ---------- */
 function viewQuellen(){
   var h = "<h1>Quellen</h1><p class=\"lead\">Alle Inhalte dieser App beruhen auf den öffentlich veröffentlichten Tarifvertragstexten für die Metall- und Elektroindustrie Baden-Württemberg. " +
@@ -792,6 +967,7 @@ function route(){
   else if(seite === "rechner"){ html = p[1] ? viewRechner(p[1]) : viewRechnerListe(); }
   else if(seite === "karten") html = viewKarten(r.q);
   else if(seite === "notizen") html = viewNotizen();
+  else if(seite === "installieren") html = viewInstallieren();
   else if(seite === "quellen") html = viewQuellen();
   else { html = viewStart(); nav = "start"; }
   m.innerHTML = html;
@@ -801,6 +977,8 @@ function route(){
   if(seite === "rechner" && p[1]) bindCalc(p[1]);
   if(seite === "karten") kartenBind();
   if(seite === "notizen") notizenBind();
+  if(seite === "installieren") installBind();
+  installBar();
   if(seite === "register"){
     var ct = el("chipsThema"), cv = el("chipsV");
     if(ct) ct.addEventListener("click", function(e){
